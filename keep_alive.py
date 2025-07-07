@@ -9,6 +9,6 @@ def home():
     return "✅ Bot is alive"
 
 def start_server():
-    thread = threading.Thread(target=app.run, kwargs={'host': '0.0.0.0', 'port': 8080})
+    thread = threading.Thread(target=app.run, kwargs={'host': '0.0.0.0', 'port': 8090})
     thread.daemon = True
     thread.start()
