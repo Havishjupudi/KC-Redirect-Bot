@@ -8,7 +8,7 @@ import re
 import threading
 from dotenv import load_dotenv
 from git import Repo
-from keep_alive import start_server
+ from keep_alive import start_server
 # Load environment variables
 load_dotenv()
 start_server()
@@ -123,57 +123,58 @@ class TelegramRedirectBot:
     def push_to_github(self, original_url, folder_name):
         """Push changes to GitHub repository with conflict handling"""
         try:
+            import shutil
+
+            print("🔁 Preparing to push to GitHub...")
+            git_env = os.environ.copy()
+            git_env["GIT_ASKPASS"] = "echo"
+
             # Clean start if repo exists but has issues
             if os.path.exists(self.repo_path):
                 try:
                     repo = Repo(self.repo_path)
-                    # Test if repo is accessible
                     repo.git.status()
-                except Exception:
-                    # If repo is corrupted, delete and re-clone
-                    import shutil
+                except Exception as e:
+                    print(f"⚠️ Repo corrupted, removing: {e}")
                     shutil.rmtree(self.repo_path)
-            
-            # Initialize/open repository
+
+            # Clone or open repo
             if not os.path.exists(self.repo_path):
-                repo = Repo.clone_from(self.git_repo_url, self.repo_path)
+                print("📥 Cloning fresh repo...")
+                repo = Repo.clone_from(self.git_repo_url, self.repo_path, env=git_env)
             else:
                 repo = Repo(self.repo_path)
-            
-            # Configure git user
+
+            print("⚙️ Configuring Git identity...")
             config = repo.config_writer()
             config.set_value("user", "name", self.github_username)
-            if self.github_email:
-                config.set_value("user", "email", self.github_email)
-            else:
-                config.set_value("user", "email", f"{self.github_username}@users.noreply.github.com")
+            config.set_value("user", "email", self.github_email or f"{self.github_username}@users.noreply.github.com")
             config.release()
-            
-            # Pull latest changes first
+
+            print("📤 Pulling latest changes...")
+            origin = repo.remote(name='origin')
             try:
-                origin = repo.remote(name='origin')
-                origin.pull()
+                origin.pull(env=git_env)
             except Exception as pull_error:
-                print(f"⚠️ Pull warning: {pull_error}")
-            
-            # Add files
+                print(f"⚠️ Pull failed (expected on first run): {pull_error}")
+
+            print("📦 Adding files...")
             repo.git.add(A=True)
-            
-            # Check if there are changes to commit
+
             if repo.is_dirty():
-                # Commit changes with generic message
-                commit_message = f"Update {folder_name}"
-                repo.index.commit(commit_message)
-                
-                # Push to GitHub
-                origin.push()
-                
+                print("✅ Committing and pushing changes...")
+                repo.index.commit(f"Update {folder_name}")
+                origin.push(env=git_env)
+                print("🚀 Pushed to GitHub successfully.")
                 return True, None
             else:
+                print("⚠️ Nothing to commit.")
                 return True, "No changes to commit"
-                
+
         except Exception as e:
+            print(f"❌ GitHub push failed: {e}")
             return False, f"GitHub push failed: {str(e)}"
+
     
     def check_url_live(self, url, max_attempts=12, delay=5):
         """Check if URL is live by making HTTP requests"""
