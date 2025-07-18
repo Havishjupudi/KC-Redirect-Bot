@@ -8,10 +8,10 @@ import re
 import threading
 from dotenv import load_dotenv
 from git import Repo
-from keep_alive import start_server
+# from keep_alive import start_server
 # Load environment variables
 load_dotenv()
-start_server()
+# start_server()
 
 class TelegramRedirectBot:
     def __init__(self):
@@ -84,34 +84,41 @@ class TelegramRedirectBot:
     def create_redirect_page(self, original_url, folder_name):
         """Create folder and minimal HTML redirect file"""
         try:
-            # Create unique folder
             full_path = os.path.join(self.repo_path, folder_name)
+            print(f"📁 Creating folder at: {full_path}")
             os.makedirs(full_path, exist_ok=True)
-            
-            # Minimal HTML template - exactly as requested
+
             html_content = f'''<!DOCTYPE html>
-<html>
-<head>
-<meta http-equiv="refresh" content="0; URL={original_url}" />
-<title></title>
-<style>
-body {{
-display: none;
-}}
-</style>
-</head>
-<body></body>
-</html>'''
-            
-            # Write HTML file
+    <html>
+    <head>
+    <meta http-equiv="refresh" content="0; URL={original_url}" />
+    <title></title>
+    <style>
+    body {{
+    display: none;
+    }}
+    </style>
+    </head>
+    <body></body>
+    </html>'''
+
             html_file_path = os.path.join(full_path, "index.html")
+            print(f"📝 Writing index.html to: {html_file_path}")
             with open(html_file_path, "w", encoding="utf-8") as f:
                 f.write(html_content)
-            
+
+            # Confirm it's actually written
+            if os.path.exists(html_file_path):
+                print("✅ index.html created successfully.")
+            else:
+                print("❌ index.html was not created.")
+
             return True, None
-            
+
         except Exception as e:
+            print(f"❌ Failed to create redirect page: {e}")
             return False, f"Failed to create redirect page: {str(e)}"
+
     
     def push_to_github(self, original_url, folder_name):
         """Push changes to GitHub repository with conflict handling"""
