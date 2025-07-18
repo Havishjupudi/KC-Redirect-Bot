@@ -8,10 +8,10 @@ import re
 import threading
 from dotenv import load_dotenv
 from git import Repo
-# from keep_alive import start_server
+from keep_alive import start_server
 # Load environment variables
 load_dotenv()
-# start_server()
+start_server()
 
 class TelegramRedirectBot:
     def __init__(self):
